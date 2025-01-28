@@ -1,0 +1,111 @@
+#define PIN_TRIG 2
+#define PIN_ECHO 3
+#define PIN_LED 4
+#define in1 5
+#define in2 6
+#define in3 7
+#define in4 8
+#define in1_1 9
+#define in2_1 10
+#define in3_1 11
+#define in4_1 12
+
+const int buttons_pin = A0;
+const int button_ranges[] = {10, 200, 400, 600, 800};
+int aaaaaaaaaaaa = 950; // Не используется. Можно удалить.
+int opusk = 2; // Глобальная переменная, которую вы также объявляете в loop()
+float duration;
+float cm;
+bool people = false;
+bool light = false;
+int curtain = 0;
+int hanger = 0;
+
+
+int getButtonPressed() {
+    int analogValue = analogRead(buttons_pin);
+    for (size_t i = 1; i < (sizeof(button_ranges) / sizeof(button_ranges[0])); i++) {
+        if (analogValue < button_ranges[i] && analogValue > button_ranges[i - 1]) {
+            return i;
+        }
+    }
+    return 0;
+}
+
+void setup() {
+    Serial.begin(9600);
+    pinMode(in1, OUTPUT);
+    pinMode(in2, OUTPUT);
+    pinMode(in3, OUTPUT);
+    pinMode(in4, OUTPUT);
+    pinMode(PIN_LED, OUTPUT);
+    pinMode(PIN_TRIG, OUTPUT);
+    pinMode(PIN_ECHO, INPUT);
+}
+
+void loop() {
+    digitalWrite(PIN_TRIG, LOW);
+    delayMicroseconds(5);
+    digitalWrite(PIN_TRIG, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(PIN_TRIG, LOW);
+    duration = pulseIn(PIN_ECHO, HIGH);
+    cm = (duration / 2.0) / 29.1;  // Исправлено на 2.0, чтобы результат был float
+    Serial.print("Расстояние до объекта: ");
+    Serial.print(cm);
+    Serial.println(" см.");
+    Serial.print("people = ");
+    Serial.print(people);
+    Serial.println(" .");
+  
+
+    int button = getButtonPressed(); 
+    int analogValue = analogRead(buttons_pin);
+    Serial.print("Analog value: ");
+    Serial.print(analogValue);
+    Serial.print(", Button: ");
+    Serial.println(button);
+
+    if (people == true) {  // Исправлена ошибка присваивания на сравнение
+      if (button == 1) {
+        dvig1(opusk);
+        curtain++;
+      } else if (button == 2) {
+        dvig1(opusk);
+        curtain--;
+      } else if (button == 3) {
+          if (hanger == 0) {
+              hanger = 1;
+              dvig(2);
+          } else if (hanger == 1) {
+              hanger = 0;
+              dvig(-2);
+          }
+      } else if (button == 4) {
+          if (light == true) {
+              light = false;
+              digitalWrite(PIN_LED, LOW);
+          } else if (light == false) {
+              light = true;
+              digitalWrite(PIN_LED, HIGH);
+          }
+      }
+    }
+
+    if (people == false) {
+      light = false;
+      digitalWrite(PIN_LED, LOW);
+       if (hanger == 0) {  // Исправлено присваивание на сравнение
+            hanger = 1;
+            dvig(2);
+          }
+        }
+
+    if (cm < 15) {
+      if (people == true) {
+            people = false;
+        } else if (people == false) {
+            people = true;
+        }
+    }
+}
